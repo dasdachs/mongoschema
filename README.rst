@@ -7,7 +7,7 @@ Mongoschema is a tool for analysing the structure of your MongoDB databases and/
 Current state
 =============
 
-The tool is is alpha state, so if you happen to come accrose it and use it, be mindfull od it's limittations.
+The tool is in *alpha state*, so if you happen to find it, take this into consideration.
 
 #. To use it jut copy `mongoschema.py` into your working directory.
 #. Install `pymongo`
@@ -15,7 +15,7 @@ The tool is is alpha state, so if you happen to come accrose it and use it, be m
 #. `s = SchemaAnalyzer(db=db_name, collection=collection_name)`:w
 #. `s.analyze()`
 #. `s.schema`
-   Returns a dict with fields and values. If a field is an array or a dict, it will sepperate the
+   Returns a dict with fields and values. If a field is an array or a dict, it will sepparate the
    fields with a comma.
 
 Roadmap
