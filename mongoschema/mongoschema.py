@@ -1,17 +1,12 @@
-import logging
-
 import pymongo
 from pymongo import MongoClient
+
+from.utils import logger
 
 
 # Export
 __all__ = ["SchemaAnalyzer"]
-# Handle logging
-logger = logging.getLogger('spam_application')
-logger.setLevel(logging.DEBUG)
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(logging.Formatter("%(message)s"))
-logger.addHandler(console_handler)
+
 
 class SchemaAnalyzer(object):
     """SchemaAnalyzer is the main class for building 
@@ -34,6 +29,10 @@ class SchemaAnalyzer(object):
     """
     def __init__(self, db, collection, host=None, query={}, schema={}):
         """
+
+        The init metod provides some "private" props, like `_len`, the 
+        length of the query results
+
         :param host: a url to you MongoDB server, database or collection
         """
         self.host = host
@@ -41,6 +40,7 @@ class SchemaAnalyzer(object):
         self.collection = collection
         self.query = query
         self.schema = schema
+        self._len = 0
 
     def analyze(self):
         """
@@ -52,28 +52,38 @@ class SchemaAnalyzer(object):
             results = conn.find(self.query)
             logger.debug(type(results))
             if isinstance(results, dict):
+                self._len = 1
                 self._get_from_object(results)
             else:
-                self._get_from_list(list(results))
+                results = list(results)
+                self._len = len(results)
+                self._get_from_list(results)
 
-    def _get_from_object(self, results, path=""):
+    def _get_from_object(self, results, path=[]):
         """
+        The main method that creates the schema. 
+
         TODO: this is a first draft, a proof of concept
         TODO: the real thing must create a dict with 
         TODO: dicts inside specifing the values and
         TODO: mitigatin the values + returning the types for js
+        TODO: iteritems for python 2
         """
-        path = path + "." if path else path
         for key, val in results.items():
-            full_path = path + key
+            path.append(key)
             if isinstance(val, dict):
-                self._get_from_object(val, path=full_path)
+                self._get_from_object(val, path=path)
             elif isinstance(val, list):
-                self._get_from_list(val, path=full_path)
+                self._get_from_list(val, path=path)
             data = self.schema.get(full_path)
             if not data:
                 self.schema[full_path] = type(val)
 
-    def _get_from_list(self, results, path=""):
-        for element in results:
-             self._get_from_object(element, path=path)
+    def _get_from_list(self, results, path=[]):
+        """
+        Maps all elements of a list with the method `_get_from_object`.
+
+        :param results: a list from a pymongo cursor
+        :param path: a list with parent fields
+        """
+        map(lambda x: self._get_from_object(x, path=path), results)
