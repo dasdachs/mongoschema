@@ -30,7 +30,7 @@ setup(
           'Topic :: Software Development :: Documentation'
     ],
     keywords=[
-        "MongoDB", "schema", "databse tools",
+        "MongoDB", "schema", "database tools",
     ],
 
     # Requirements 

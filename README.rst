@@ -12,6 +12,7 @@ The tool is in it's **alpha state**, so if you happen to find it, take this into
 #. To use it jut copy `mongoschema.py` into your working directory.
 #. Install **pymongo**
 #. ``from mongoschema import SchemaAnalyzer``
+#. ``from mongoschema import SchemaAnalyzera``
 #. ``s = SchemaAnalyzer(db=db_name, collection=collection_name)``
 #. ``s.analyze()``
 #. ``s.schema``
