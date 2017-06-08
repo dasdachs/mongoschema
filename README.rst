@@ -15,7 +15,8 @@ The tool is in it's **alpha state**, so if you happen to find it, take this into
 #. ``from mongoschema import SchemaAnalyzera``
 #. ``s = SchemaAnalyzer(db=db_name, collection=collection_name)``
 #. ``s.analyze()``
-#. ``s.schema``
+#. ``print(s)``
+
    Returns a dict with fields and values. If a field is an array or a dict, it will sepparate the
    fields with a comma.
 

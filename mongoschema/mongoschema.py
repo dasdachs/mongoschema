@@ -73,19 +73,21 @@ class SchemaAnalyzer(object):
         TODO: iteritems for python 2
         """
         for key, val in results.items():
-            path.append(key)
+            new_path = path + [key]
             if isinstance(val, dict):
-                self._get_from_object(val, path=path)
+                self._get_from_object(val, path=new_path)
             elif isinstance(val, list):
-                self._get_from_list(val, path=path)
-            full_path = '.'.join(path)
-            data = self.schema.get(full_path)
-            if not data:
-                self.schema[full_path] = {
-                    'type': type(val),
-                    'occurrence': 0,
-                }
-            data['occurrence'] += 1
+                self._get_from_list(val, path=new_path)
+            else:    
+                full_path = '.'.join(new_path)
+                data = self.schema.get(full_path)
+                if not data:
+                    self.schema[full_path] = {
+                        'type': type(val),
+                        'occurrence': 1
+                    }
+                else:
+                    data['occurrence'] += 1
 
     def _get_from_list(self, results, path=[]):
         """
@@ -94,7 +96,8 @@ class SchemaAnalyzer(object):
         :param results: a list from a pymongo cursor
         :param path: a list with parent fields
         """
-        map(lambda x: self._get_from_object(x, path=path), results)
+        for result in results:
+            self._get_from_object(result, path=path)
 
     def __str__(self, out="ascii"):
         """Printable representation of the schema.
@@ -109,17 +112,21 @@ class SchemaAnalyzer(object):
             key=lambda x: x[1]["occurrence"],
             reverse=True
         )
-        for v in data.values():
+        for value in data:
+            v = value[1]
             v["occurrence"] = str(v["occurrence"]*100/self._len) + " %"
         if out == "json":
             return json.dumps(data)
         else: 
             # Prepare the ASCII table
             table = Texttable()
-            table.set_cols_align(['l', 'r', 'c'])
+            table.set_cols_align(['r', 'r', 'r'])
             table.set_cols_valign(['m', 'm', 'm'])
             table.set_cols_dtype(['t', 'i','a'])
             table.add_row(["Field", "Data Type", "Occurrence"])
-            for k, v in data.items():
-                table.add_row([k, v["type"], v["occurrence"]])
+            for element in data:
+                name = element[0]
+                type_ = element[1]["type"]
+                occurrence = element[1]["occurrence"]
+                table.add_row([name, type_, occurrence])
             return table.draw() + '\n'
