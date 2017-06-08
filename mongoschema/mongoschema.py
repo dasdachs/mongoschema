@@ -1,11 +1,14 @@
+import json
+
 import pymongo
 from pymongo import MongoClient
+from texttable import Texttable
 
 from.utils import logger
 
 
 # Export
-__all__ = ["SchemaAnalyzer"]
+__all__ = ['SchemaAnalyzer']
 
 
 class SchemaAnalyzer(object):
@@ -30,7 +33,7 @@ class SchemaAnalyzer(object):
     def __init__(self, db, collection, host=None, query={}, schema={}):
         """
 
-        The init metod provides some "private" props, like `_len`, the 
+        The init metod provides some 'private' props, like `_len`, the 
         length of the query results
 
         :param host: a url to you MongoDB server, database or collection
@@ -75,9 +78,14 @@ class SchemaAnalyzer(object):
                 self._get_from_object(val, path=path)
             elif isinstance(val, list):
                 self._get_from_list(val, path=path)
+            full_path = '.'.join(path)
             data = self.schema.get(full_path)
             if not data:
-                self.schema[full_path] = type(val)
+                self.schema[full_path] = {
+                    'type': type(val),
+                    'occurrence': 0,
+                }
+            data['occurrence'] += 1
 
     def _get_from_list(self, results, path=[]):
         """
@@ -87,3 +95,31 @@ class SchemaAnalyzer(object):
         :param path: a list with parent fields
         """
         map(lambda x: self._get_from_object(x, path=path), results)
+
+    def __str__(self, out="ascii"):
+        """Printable representation of the schema.
+        :param out: a string representing the output method
+         could be ascii for the console or a json
+        """
+        if not self.schema:
+            self.analyze()
+        # Prepare the data
+        data = sorted(
+            self.schema.items(),
+            key=lambda x: x[1]["occurrence"],
+            reverse=True
+        )
+        for v in data.values():
+            v["occurrence"] = str(v["occurrence"]*100/self._len) + " %"
+        if out == "json":
+            return json.dumps(data)
+        else: 
+            # Prepare the ASCII table
+            table = Texttable()
+            table.set_cols_align(['l', 'r', 'c'])
+            table.set_cols_valign(['m', 'm', 'm'])
+            table.set_cols_dtype(['t', 'i','a'])
+            table.add_row(["Field", "Data Type", "Occurrence"])
+            for k, v in data.items():
+                table.add_row([k, v["type"], v["occurrence"]])
+            return table.draw() + '\n'
