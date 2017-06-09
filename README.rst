@@ -12,7 +12,6 @@ The tool is in it's **alpha state**, so if you happen to find it, take this into
 #. To use it jut copy `mongoschema.py` into your working directory.
 #. Install **pymongo**
 #. ``from mongoschema import SchemaAnalyzer``
-#. ``from mongoschema import SchemaAnalyzera``
 #. ``s = SchemaAnalyzer(db=db_name, collection=collection_name)``
 #. ``s.analyze()``
    Saves a dict with fields, values and number of ocurrences to a property called ``schema``. If a field is an array or a dict,
