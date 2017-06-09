@@ -120,6 +120,17 @@ class SchemaAnalyzer(object):
             v["occurrence"] = str(v["occurrence"]*100/self._len) + " %"
         return data
 
+    def to_json(self):
+        """JSON representation of the schema.
+        TODO: the first line of to_json an __str__ duplicate code, refactor
+        """
+        data = self._preprocesss_for_reproting()
+        out = {}
+        for element in data:
+            key, value = element
+            data[key] = value
+        return json.dumps(out)
+
     def __str__(self, out="ascii"):
         """Printable representation of the schema."""
         # Prepare the ASCII table
