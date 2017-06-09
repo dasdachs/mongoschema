@@ -99,14 +99,17 @@ class SchemaAnalyzer(object):
         for result in results:
             self._get_from_object(result, path=path)
 
-    def __str__(self, out="ascii"):
-        """Printable representation of the schema.
-        :param out: a string representing the output method
-         could be ascii for the console or a json
+    def _preprocesss_for_reproting(self):
+        """Prepares the date for reporting to stdOut or JSON
+        TODO: use sorteddict instead of sorted()
+        :return data: a list of tuples (field_name, {type, occurence})
         """
         if not self.schema:
+            logger.info("Analyzing schema.")
             self.analyze()
         # Prepare the data
+        # first sorting by occurence
+        # than changin occurence to %
         data = sorted(
             self.schema.items(),
             key=lambda x: x[1]["occurrence"],
@@ -115,18 +118,20 @@ class SchemaAnalyzer(object):
         for value in data:
             v = value[1]
             v["occurrence"] = str(v["occurrence"]*100/self._len) + " %"
-        if out == "json":
-            return json.dumps(data)
-        else: 
-            # Prepare the ASCII table
-            table = Texttable()
-            table.set_cols_align(['r', 'r', 'r'])
-            table.set_cols_valign(['m', 'm', 'm'])
-            table.set_cols_dtype(['t', 'i','a'])
-            table.add_row(["Field", "Data Type", "Occurrence"])
-            for element in data:
-                name = element[0]
-                type_ = element[1]["type"]
-                occurrence = element[1]["occurrence"]
-                table.add_row([name, type_, occurrence])
-            return table.draw() + '\n'
+        return data
+
+    def __str__(self, out="ascii"):
+        """Printable representation of the schema."""
+        # Prepare the ASCII table
+        data = self._preprocesss_for_reproting()
+        table = Texttable()
+        table.set_cols_align(['l', 'l', 'l'])
+        table.set_cols_valign(['m', 'm', 'm'])
+        table.set_cols_dtype(['t', 'i','a'])
+        table.add_row(["Field", "Data Type", "Occurrence"])
+        for element in data:
+            name = element[0]
+            type_ = element[1]["type"]
+            occurrence = element[1]["occurrence"]
+            table.add_row([name, type_, occurrence])
+        return table.draw() + '\n'

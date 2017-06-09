@@ -15,10 +15,9 @@ The tool is in it's **alpha state**, so if you happen to find it, take this into
 #. ``from mongoschema import SchemaAnalyzera``
 #. ``s = SchemaAnalyzer(db=db_name, collection=collection_name)``
 #. ``s.analyze()``
-#. ``print(s)``
-
-   Returns a dict with fields and values. If a field is an array or a dict, it will sepparate the
-   fields with a comma.
+   Saves a dict with fields, values and number of ocurrences to a property called ``schema``. If a field is an array or a dict,
+   it will sepparate the fields with a comma.
+#. For stdout call ``print(s)``, for a JSON call ``to_json()``.
 
 Roadmap
 =======
