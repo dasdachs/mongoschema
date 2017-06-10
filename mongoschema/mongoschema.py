@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import json
 
 import pymongo
@@ -44,7 +45,6 @@ class SchemaAnalyzer(object):
         self.query = query
         self.schema = schema
         self._len = 0
-        self._analyzed = False
 
     def analyze(self):
         """
@@ -63,6 +63,7 @@ class SchemaAnalyzer(object):
                 results = list(results)
                 self._len = len(results)
                 self._get_from_list(results)
+        self._preprocesss_for_reproting()
 
     def _get_from_object(self, results, path=[]):
         """
@@ -102,48 +103,46 @@ class SchemaAnalyzer(object):
             self._get_from_object(result, path=path)
 
     def _preprocesss_for_reproting(self):
-        """Prepares the date for reporting to stdOut or JSON
-
-        :return data: a list of tuples (field_name, {type, occurence})
-        """
-        if not self.schema:
-            self.analyze()
-        if not self._analyzed:
-            # Add percentage for field
-            for value in self.schema.values():
-                value["occurrence"] = str(value["sum"]*100/self._len) + " %"
-            # Prepare the data
-            # first sorting by occurence
-            # than changin occurence to %
-            self.schema = sorted(
-                self.schema.items(),
-                key=lambda x: x[1]["sum"],
-                reverse=True
-            )
-            self._analyzed = True
-        return self.schema
+        """Prepares the date for reporting to stdOut or JSON"""
+        # Add percentage for field
+        for value in self.schema.values():
+            percentage = round(value["sum"]*100/self._len, 2)
+            value["occurrence"] = str(percentage) + " %"
+        # Prepare the data
+        # first sorting by occurence
+        # than changin occurence to %
+        data = sorted(
+            self.schema.items(),
+            key=lambda x: x[1]["sum"],
+            reverse=True
+        )
+        # Insert into OrderdDict
+        # TODO exception for python 3.6 >
+        self.schema = OrderedDict()
+        for element in data:
+            key, value = element
+            self.schema[key] = value
 
     def to_json(self):
         """JSON representation of the schema.
         TODO: the first line of to_json an __str__ duplicate code, refactor
         """
-        data = self._preprocesss_for_reproting()
-        out = {}
-        for element in data:
-            key, value = element
-            data[key] = value
-        return json.dumps(out)
+        if not self.schema:
+            self.analyze()
+        return json.dumps(self.schema)
 
     def __str__(self, out="ascii"):
         """Printable representation of the schema."""
-        data = self._preprocesss_for_reproting()
+        if not self.schema:
+            self.analyze()
         # Prepare the ASCII table
         table = Texttable()
         table.set_cols_align(['l', 'l', 'l'])
         table.set_cols_valign(['m', 'm', 'm'])
         table.set_cols_dtype(['t', 'i','a'])
         table.add_row(["Field", "Data Type", "Occurrence"])
-        for key, value in data.items():
+        # Create the rows
+        for key, value in self.schema.items():
             name = key
             type_ = value["type"]
             occurrence = value["occurrence"]
