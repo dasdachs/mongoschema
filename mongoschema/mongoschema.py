@@ -4,7 +4,7 @@ import pymongo
 from pymongo import MongoClient
 from texttable import Texttable
 
-from.utils import logger
+from .utils import logger, map_dtype_to_bson
 
 
 # Export
@@ -44,6 +44,7 @@ class SchemaAnalyzer(object):
         self.query = query
         self.schema = schema
         self._len = 0
+        self._analyzed = False
 
     def analyze(self):
         """
@@ -51,6 +52,7 @@ class SchemaAnalyzer(object):
         TODO: make it poosible to analyze the db
         """
         with MongoClient(self.host) as cursor:
+            logger.info("Analyzing schema.")
             conn = cursor[self.db][self.collection]
             results = conn.find(self.query)
             logger.debug(type(results))
@@ -78,16 +80,16 @@ class SchemaAnalyzer(object):
                 self._get_from_object(val, path=new_path)
             elif isinstance(val, list):
                 self._get_from_list(val, path=new_path)
-            else:    
+            else:
                 full_path = '.'.join(new_path)
                 data = self.schema.get(full_path)
                 if not data:
                     self.schema[full_path] = {
-                        'type': type(val),
-                        'occurrence': 1
+                        'type': map_dtype_to_bson(val),
+                        'sum': 1
                     }
                 else:
-                    data['occurrence'] += 1
+                    data['sum'] += 1
 
     def _get_from_list(self, results, path=[]):
         """
@@ -101,24 +103,25 @@ class SchemaAnalyzer(object):
 
     def _preprocesss_for_reproting(self):
         """Prepares the date for reporting to stdOut or JSON
-        TODO: use sorteddict instead of sorted()
+
         :return data: a list of tuples (field_name, {type, occurence})
         """
         if not self.schema:
-            logger.info("Analyzing schema.")
             self.analyze()
-        # Prepare the data
-        # first sorting by occurence
-        # than changin occurence to %
-        data = sorted(
-            self.schema.items(),
-            key=lambda x: x[1]["occurrence"],
-            reverse=True
-        )
-        for value in data:
-            v = value[1]
-            v["occurrence"] = str(v["occurrence"]*100/self._len) + " %"
-        return data
+        if not self._analyzed:
+            # Add percentage for field
+            for value in self.schema.values():
+                value["occurrence"] = str(value["sum"]*100/self._len) + " %"
+            # Prepare the data
+            # first sorting by occurence
+            # than changin occurence to %
+            self.schema = sorted(
+                self.schema.items(),
+                key=lambda x: x[1]["sum"],
+                reverse=True
+            )
+            self._analyzed = True
+        return self.schema
 
     def to_json(self):
         """JSON representation of the schema.
@@ -133,16 +136,16 @@ class SchemaAnalyzer(object):
 
     def __str__(self, out="ascii"):
         """Printable representation of the schema."""
-        # Prepare the ASCII table
         data = self._preprocesss_for_reproting()
+        # Prepare the ASCII table
         table = Texttable()
         table.set_cols_align(['l', 'l', 'l'])
         table.set_cols_valign(['m', 'm', 'm'])
         table.set_cols_dtype(['t', 'i','a'])
         table.add_row(["Field", "Data Type", "Occurrence"])
-        for element in data:
-            name = element[0]
-            type_ = element[1]["type"]
-            occurrence = element[1]["occurrence"]
+        for key, value in data.items():
+            name = key
+            type_ = value["type"]
+            occurrence = value["occurrence"]
             table.add_row([name, type_, occurrence])
         return table.draw() + '\n'
