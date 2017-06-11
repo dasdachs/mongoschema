@@ -1,3 +1,4 @@
+import csv
 from collections import OrderedDict
 import json
 
@@ -123,6 +124,16 @@ class SchemaAnalyzer(object):
             key, value = element
             self.schema[key] = value
 
+    def _get_rows(self):
+        """Returns array coresoinding to rows."""
+        rows = []
+        for key, value in self.schema.items():
+            name = key
+            type_ = value["type"]
+            occurrence = value["occurrence"]
+            row.append([name, type_, occurrence])
+        return rows
+
     def to_json(self):
         """JSON representation of the schema.
         TODO: the first line of to_json an __str__ duplicate code, refactor
@@ -130,6 +141,17 @@ class SchemaAnalyzer(object):
         if not self.schema:
             self.analyze()
         return json.dumps(self.schema)
+
+    def to_csv(self, name="report.csv", **kwargs):
+        """CSV representation of the schema."""
+        if not self.schema:
+            self.analyze()
+        with open(name, "w") as f:
+            csv_writer = csv.writer(f, **kwargs)
+            csv_writer.writerow(["Field", "Data Type", "Occurrence"])
+            rows = self._get_rows()
+            for row in rows:
+                csv_writer.writerow(row)
 
     def __str__(self, out="ascii"):
         """Printable representation of the schema."""
@@ -142,9 +164,7 @@ class SchemaAnalyzer(object):
         table.set_cols_dtype(['t', 'i','a'])
         table.add_row(["Field", "Data Type", "Occurrence"])
         # Create the rows
-        for key, value in self.schema.items():
-            name = key
-            type_ = value["type"]
-            occurrence = value["occurrence"]
-            table.add_row([name, type_, occurrence])
+        rows = self._get_rows()
+        for row in rows:
+            table.add_row(row)
         return table.draw() + '\n'
