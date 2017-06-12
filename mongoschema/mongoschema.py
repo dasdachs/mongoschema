@@ -34,7 +34,7 @@ class SchemaAnalyzer(object):
     """
     def __init__(self, db, collection, host=None, query={}, schema={}):
         """
-
+        TODO: solve working with new query
         The init metod provides some 'private' props, like `_len`, the 
         length of the query results
 
@@ -90,6 +90,8 @@ class SchemaAnalyzer(object):
                         'type': map_dtype_to_bson(val),
                         'sum': 1
                     }
+                elif len(path) and data:
+                    pass
                 else:
                     data['sum'] += 1
 
@@ -131,7 +133,7 @@ class SchemaAnalyzer(object):
             name = key
             type_ = value["type"]
             occurrence = value["occurrence"]
-            row.append([name, type_, occurrence])
+            rows.append([name, type_, occurrence])
         return rows
 
     def to_json(self):
