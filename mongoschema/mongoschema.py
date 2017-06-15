@@ -2,7 +2,6 @@ import csv
 from collections import OrderedDict
 import json
 
-import pymongo
 from pymongo import MongoClient
 from texttable import Texttable
 
@@ -32,15 +31,13 @@ class SchemaAnalyzer(object):
     >>> schema.to_csv(delimiter=';')
     >>> schema.save()
     """
-    def __init__(self, db, collection, host=None, query={}, schema={}):
+    def __init__(self, host="", db="", collection="", query={}, **kwargs):
         """
         TODO: solve working with new query
         The init metod provides some 'private' props, like `_len`, the 
         length of the query results
-
-        :param host: a url to you MongoDB server, database or collection
         """
-        self.host = host
+        self.cursor = MongoClient(host, **kawrgs)
         self.db = db
         self.collection = collection
         self.query = query
@@ -52,11 +49,11 @@ class SchemaAnalyzer(object):
         TODO: easier collection selection
         TODO: make it poosible to analyze the db
         """
-        with MongoClient(self.host) as cursor:
+        with self.cursor as cursor:
             logger.info("Analyzing schema.")
             conn = cursor[self.db][self.collection]
             results = conn.find(self.query)
-            logger.debug(type(results))
+            logger.debug("Analyzing {} in {}".format(self.db, self.collection))
             if isinstance(results, dict):
                 self._len = 1
                 self._get_from_object(results)
@@ -66,7 +63,7 @@ class SchemaAnalyzer(object):
                 self._get_from_list(results)
         self._preprocesss_for_reproting()
 
-    def _get_from_object(self, results, path=[]):
+    def _get_from_object(self, results, path=[], counted=False):
         """
         The main method that creates the schema. 
 
@@ -79,9 +76,11 @@ class SchemaAnalyzer(object):
         for key, val in results.items():
             new_path = path + [key]
             if isinstance(val, dict):
-                self._get_from_object(val, path=new_path)
+                self._get_from_object(val, path=new_path, counted=counted)
             elif isinstance(val, list):
-                self._get_from_list(val, path=new_path)
+                self._get_from_list(val, path=new_path, counted=counted)
+            elif counted:
+                pass
             else:
                 full_path = '.'.join(new_path)
                 data = self.schema.get(full_path)
@@ -90,12 +89,11 @@ class SchemaAnalyzer(object):
                         'type': map_dtype_to_bson(val),
                         'sum': 1
                     }
-                elif len(path) and data:
-                    pass
                 else:
-                    data['sum'] += 1
+                    self.schema[full_path]['sum'] += 1
+                counted = True
 
-    def _get_from_list(self, results, path=[]):
+    def _get_from_list(self, results, path=[], nested=False):
         """
         Maps all elements of a list with the method `_get_from_object`.
 
