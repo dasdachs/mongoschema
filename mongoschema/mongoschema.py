@@ -37,11 +37,14 @@ class SchemaAnalyzer(object):
         The init metod provides some 'private' props, like `_len`, the 
         length of the query results
         """
-        self.cursor = MongoClient(host, **kawrgs)
+        if not host:
+            self.cursor = MongoClient()
+        else:
+            self.cursor = MongoClient(host, **kwargs)
         self.db = db
         self.collection = collection
         self.query = query
-        self.schema = schema
+        self.schema = {}
         self._len = 0
 
     def analyze(self):
@@ -53,19 +56,17 @@ class SchemaAnalyzer(object):
             logger.info("Analyzing schema.")
             conn = cursor[self.db][self.collection]
             results = conn.find(self.query)
-            logger.debug("Analyzing {} in {}".format(self.db, self.collection))
-            if isinstance(results, dict):
-                self._len = 1
-                self._get_from_object(results)
-            else:
-                results = list(results)
-                self._len = len(results)
-                self._get_from_list(results)
+        # Analyze the results
+        logger.debug("Analyzing {} in {}".format(self.collection, self.db))
+        for result in results:
+            self._len += 1
+            self._get_from_object(result)
+        # Calculate the percentage for each field
         self._preprocesss_for_reproting()
 
-    def _get_from_object(self, results, path=[], counted=False):
+    def _get_from_object(self, result, path=[]):
         """
-        The main method that creates the schema. 
+        The main method that creates the schema
 
         TODO: this is a first draft, a proof of concept
         TODO: the real thing must create a dict with 
@@ -73,16 +74,18 @@ class SchemaAnalyzer(object):
         TODO: mitigatin the values + returning the types for js
         TODO: iteritems for python 2
         """
-        for key, val in results.items():
+        # Naive state tracking
+        state = {}
+        for key, val in result.items():
+            logger.debug("Analyzing key {}".format(key))
             new_path = path + [key]
             if isinstance(val, dict):
-                self._get_from_object(val, path=new_path, counted=counted)
+                self._get_from_object(val, path=new_path)
             elif isinstance(val, list):
-                self._get_from_list(val, path=new_path, counted=counted)
-            elif counted:
-                pass
+                self._get_from_list(val, path=new_path)
             else:
                 full_path = '.'.join(new_path)
+                logger.debug("Full path for write is {}".format(full_path))
                 data = self.schema.get(full_path)
                 if not data:
                     self.schema[full_path] = {
@@ -91,9 +94,9 @@ class SchemaAnalyzer(object):
                     }
                 else:
                     self.schema[full_path]['sum'] += 1
-                counted = True
+                state["full_path"] = 1
 
-    def _get_from_list(self, results, path=[], nested=False):
+    def _get_from_list(self, results, path=[]):
         """
         Maps all elements of a list with the method `_get_from_object`.
 
