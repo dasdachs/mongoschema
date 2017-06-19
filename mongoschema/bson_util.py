@@ -5,7 +5,7 @@ import datetime
 import re
 
 
-# __all__ = [""]
+__all__ = ["BSON_MAPPER"]
 
 BSON_MAPPER = {
         bson.objectid.ObjectId: "objectId",
