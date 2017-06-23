@@ -7,18 +7,25 @@ import re
 
 __all__ = ["BSON_MAPPER"]
 
-BSON_MAPPER = {
-        bson.objectid.ObjectId: "objectId",
-        bool: "bool",
-        datetime.date: "Date",
-        datetime.datetime: "Date",
-        bson.regex.Regex: "Regex",
-        str: "string",
-        int: "integer",
-        float: "float",
-        list: "array",
-        dict: "object",
-}
+
+def get_dtype(value):
+    """
+    """
+    if type(value) == None:
+        return "null"
+    mapper= {
+            bson.objectid.ObjectId: "objectId",
+            bool: "bool",
+            datetime.date: "Date",
+            datetime.datetime: "Date",
+            bson.regex.Regex: "Regex",
+            str: "string",
+            int: _get_ini(),
+            float: "float",
+            list: "array",
+            dict: "object",
+    }
+    return mapper(value)
 
 def _get_int(value):
     """Encode python int type to bson int32/64."""
