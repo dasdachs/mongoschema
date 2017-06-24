@@ -24,6 +24,7 @@ def get_dtype(value):
             float: "float",
             list: "array",
             dict: "object",
+            bytes: "binData"
     }
     return mapper(value)
 
@@ -33,3 +34,6 @@ def _get_int(value):
         return "int"
     else:
         return "long"
+
+def _get_float(value):
+    pass
