@@ -45,12 +45,14 @@ setup(
     keywords=[
         "MongoDB", "schema", "database tools",
     ],
-
     # Requirements 
     install_requires=[
         "pymongo >= 3.4",
+        "texttable >= 0.9.0"
     ],
-
+    # Testing
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest'],
     # CLI tool
     entry_points={
         'console_scripts':""

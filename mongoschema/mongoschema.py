@@ -73,7 +73,7 @@ class SchemaAnalyzer(object):
         self._get_from_object(result)
         for key in curr_object.keys():
             if self.schema.get(key):
-                self.schema[key]["sum"] += curr_object[key]
+                self.schema[key]["sum"] += 1
             else:
                 self.schema[key] = curr_object[key]
 
@@ -88,7 +88,7 @@ class SchemaAnalyzer(object):
         TODO: iteritems for python 2
         """
         for key, val in result.items():
-            logger.debug("Analyzing key {}".format(key))
+            # logger.debug("Analyzing key {}".format(key))
             new_path = path + [key]
             if isinstance(val, dict):
                 self._get_from_object(val, path=new_path)
@@ -102,8 +102,6 @@ class SchemaAnalyzer(object):
                         'type': get_dtype(val),
                         'sum': 1
                     }
-                else:
-                    curr_object[full_path]['sum'] += 1
 
     def _get_from_list(self, results, path=[]):
         """

@@ -16,18 +16,19 @@ __all__ = ["get_dtype"]
 def get_dtype(value):
     """
     """
-    logger.debug("Creating bson mapping for {}, type {}".format(value, type(value)))
-    if type(value) == None:
+    # logger.debug("Creating bson mapping for {}, type {}".format(value, type(value)))
+    if value == None:
         return "null"
     elif isinstance(value, ObjectId):
         return "ObjectId"
+    elif isinstance(value, int):
+        return _get_int(value)
     mapper= {
             bool: "bool",
             datetime.date: "Date",
             datetime.datetime: "Date",
             bson.regex.Regex: "Regex",
             str: "string",
-            int: _get_int(value),
             float: "float",
             list: "array",
             dict: "object",
