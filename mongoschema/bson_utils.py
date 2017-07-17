@@ -4,29 +4,36 @@ the bson modul in pymongo."""
 import datetime
 import re
 
+import bson
+from bson.objectid import ObjectId
 
-__all__ = ["BSON_MAPPER"]
+from .logger import logger
+
+
+__all__ = ["get_dtype"]
 
 
 def get_dtype(value):
     """
     """
+    logger.debug("Creating bson mapping for {}, type {}".format(value, type(value)))
     if type(value) == None:
         return "null"
+    elif isinstance(value, ObjectId):
+        return "ObjectId"
     mapper= {
-            bson.objectid.ObjectId: "objectId",
             bool: "bool",
             datetime.date: "Date",
             datetime.datetime: "Date",
             bson.regex.Regex: "Regex",
             str: "string",
-            int: _get_ini(),
+            int: _get_int(value),
             float: "float",
             list: "array",
             dict: "object",
             bytes: "binData"
     }
-    return mapper(value)
+    return mapper[type(value)]
 
 def _get_int(value):
     """Encode python int type to bson int32/64."""

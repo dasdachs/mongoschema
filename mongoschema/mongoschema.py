@@ -5,7 +5,8 @@ import json
 from pymongo import MongoClient
 from texttable import Texttable
 
-from .utils import logger, map_dtype_to_bson
+from .logger import logger
+from .bson_utils import get_dtype
 
 
 # Export
@@ -16,8 +17,7 @@ class SchemaAnalyzer(object):
     """SchemaAnalyzer is the main class for building 
     a MongoDB schema analysis.
 
-    The API is simple, instantiate a schema object:
-
+    The API is simple, instantiate a schema object: 
     >>> schema = SchemaAnalyzer()
     >>> schema.info()
 
@@ -58,11 +58,24 @@ class SchemaAnalyzer(object):
             results = conn.find(self.query)
         # Analyze the results
         logger.debug("Analyzing {} in {}".format(self.collection, self.db))
+        # TODO: Make a generator function
         for result in results:
             self._len += 1
-            self._get_from_object(result)
+            self._process_object(result)
         # Calculate the percentage for each field
         self._preprocesss_for_reproting()
+
+    def _process_object(self, result):
+        """
+        """
+        global curr_object
+        curr_object = {}
+        self._get_from_object(result)
+        for key in curr_object.keys():
+            if self.schema.get(key):
+                self.schema[key]["sum"] += curr_object[key]
+            else:
+                self.schema[key] = curr_object[key]
 
     def _get_from_object(self, result, path=[]):
         """
@@ -74,8 +87,6 @@ class SchemaAnalyzer(object):
         TODO: mitigatin the values + returning the types for js
         TODO: iteritems for python 2
         """
-        # Naive state tracking
-        state = {}
         for key, val in result.items():
             logger.debug("Analyzing key {}".format(key))
             new_path = path + [key]
@@ -85,16 +96,14 @@ class SchemaAnalyzer(object):
                 self._get_from_list(val, path=new_path)
             else:
                 full_path = '.'.join(new_path)
-                logger.debug("Full path for write is {}".format(full_path))
-                data = self.schema.get(full_path)
+                data = curr_object.get(full_path)
                 if not data:
-                    self.schema[full_path] = {
-                        'type': map_dtype_to_bson(val),
+                    curr_object[full_path] = {
+                        'type': get_dtype(val),
                         'sum': 1
                     }
                 else:
-                    self.schema[full_path]['sum'] += 1
-                state["full_path"] = 1
+                    curr_object[full_path]['sum'] += 1
 
     def _get_from_list(self, results, path=[]):
         """
