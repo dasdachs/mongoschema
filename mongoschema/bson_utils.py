@@ -21,7 +21,7 @@ def get_dtype(value):
         return "null"
     elif isinstance(value, ObjectId):
         return "ObjectId"
-    elif isinstance(value, int):
+    elif isinstance(value, int) and type(value) != bool:
         return _get_int(value)
     mapper= {
             bool: "bool",
