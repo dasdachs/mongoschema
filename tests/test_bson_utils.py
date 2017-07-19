@@ -1,3 +1,5 @@
+import datetime
+
 from bson.objectid import ObjectId
 
 from mongoschema.bson_utils import *
@@ -33,3 +35,17 @@ class TestMapper(object):
 
     def test_for_bool_not_a_bool(self):
         assert get_dtype(0) != "bool"
+
+    def test_for_date_with_date(self):
+        unix_time = datetime.date(1970, 1, 1)
+        assert get_dtype(unix_time) == "Date"
+
+    def test_for_date_with_datetime(self):
+        unix_time = datetime.datetime(1970, 1, 1)
+        assert get_dtype(unix_time) == "Date"
+
+    def test_for_string(self):
+        assert get_dtype("test") == "string"
+
+    def test_for_array_with_list(self):
+        assert get_dtype(["test"]) == "array"
