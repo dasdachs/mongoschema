@@ -65,6 +65,20 @@ class SchemaAnalyzer(object):
         # Calculate the percentage for each field
         self._preprocesss_for_reproting()
 
+    """
+    New and better method for single objects
+     def get_keys(item):
+    ...:     for k,v in item.items():
+    ...:         if isinstance(v, dict):
+    ...:             get_keys(v)
+    ...:         elif isinstance(v, list):
+    ...:             for e in v:
+    ...:                 get_keys(e)
+    ...:         else:
+    ...:             if not i.get(k):
+    ...:                 i[k] = 1
+    """
+
     def _process_object(self, result):
         """
         """
